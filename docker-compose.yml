@@ -1,0 +1,42 @@
+version: '2'
+
+services:
+  postgres:
+    restart: always
+    image: postgres:latest
+    ports:
+      - "5432"
+
+  rabbit:
+    restart: always
+    hostname: rabbit
+    image: rabbitmq:latest
+    ports:
+      - "5672"
+      - "15673"
+
+  web:
+    restart: always
+    build: ./web
+    command: python manage.py runserver 0.0.0.0:8004
+    ports:
+      - "8004:8004"
+    links:
+      - postgres:postgres
+      - rabbit:rabbit
+    volumes:
+      - ./web:/usr/src/app
+      - ./data:/usr/src/app/data
+      - ./media:/usr/src/app/media
+
+  worker:
+    restart: always
+    build: ./web
+    command: celery worker -A freelance -l info
+    volumes:
+      - ./web:/usr/src/app
+    links:
+      - postgres:postgres
+      - rabbit:rabbit
+    depends_on:
+      - rabbit

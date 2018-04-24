@@ -1,0 +1,8 @@
+Django>=2.0
+psycopg2
+celery
+django-allauth
+djangorestframework<=3.7.4
+Pillow==2.8.2
+mock
+django-nose
