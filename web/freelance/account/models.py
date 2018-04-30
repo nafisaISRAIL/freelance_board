@@ -5,13 +5,15 @@ from django.contrib.auth.models import (
     BaseUserManager
 )
 
+from django.contrib.auth.models import UserManager
+
 ROLES = (
     ('freelancer', 'Freelancer',),
     ('client', 'Client'),
 )
 
 
-class UserManager(BaseUserManager):
+class UserAuthManager(BaseUserManager):
     def _create_user(self, email, password, **extra_fields):
         if not email:
             raise ValueError('The Email must be set')
@@ -32,6 +34,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
+
+    objects = UserManager()
 
     def get_full_name(self):
         return '{} {}'.format(self.first_name, self.last_name)
