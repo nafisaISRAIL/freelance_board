@@ -28,6 +28,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=50, blank=True)
     last_name = models.CharField(max_length=50, blank=True)
     balance = models.PositiveIntegerField(default=0)
+    freeze_balance = models.PositiveIntegerField(default=0)
     date_joined = models.DateTimeField(auto_now_add=True)
     role = models.CharField(max_length=50, choices=ROLES)
 
