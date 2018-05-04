@@ -9,6 +9,7 @@ class OrderTestCase(APIViewTestCase):
         self.freelancer = User.objects.create(email='test@example.com', role='freelancer', password='qwerty')
         self.user_client = User.objects.create(email='client@example.com', role='client')
         self.user_client.set_password('qwerty')
+        self.user_client.balance = 100
         self.user_client.save()
         response = self.client.post('/api/v1/login', {'email': 'client@example.com', 'password':'qwerty'})
         self.client_token = response.data['token']
@@ -17,7 +18,7 @@ class OrderTestCase(APIViewTestCase):
         data = {
             'title': 'new order',
             'description': 'new order description',
-            'price': 120,
+            'price': 20,
         }
         self.client.credentials(HTTP_AUTHORIZATION='Token {}'.format(self.client_token))
         response = self.client.post('/api/v1/orders', data)
@@ -28,7 +29,7 @@ class OrderTestCase(APIViewTestCase):
         data = {
             'title': 'new order',
             'description': 'new order description',
-            'price': 120,
+            'price': 20,
             'status': 'new'
         }
         self.client.credentials(HTTP_AUTHORIZATION='Token {}'.format(self.client_token))
@@ -43,6 +44,16 @@ class OrderTestCase(APIViewTestCase):
         }
         response = self.client.post('/api/v1/orders', data)
         self.assertEqual(response.status_code, 401)
+
+    def test_400_low_balance(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token {}'.format(self.client_token))
+        data = {
+            'title': 'new order',
+            'description': 'new order description',
+            'price': 120,
+        }
+        response = self.client.post('/api/v1/orders', data)
+        self.assertEqual(response.status_code, 400)
 
 
 class FreelancerRequestTestCase(APIViewTestCase):

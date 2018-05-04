@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from freelance.order.models import Order, FreelancerRequest
+from freelance.account.models import User
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -22,6 +23,8 @@ class OrderSerializer(serializers.ModelSerializer):
     def validate(self, validated_data):
         if not 'status' in validated_data:
             validated_data['status'] = 'new'
+        if validated_data['client'].balance < validated_data['price']:
+            raise serializers.ValidationError('Not anouth balance')
         return validated_data
 
 
