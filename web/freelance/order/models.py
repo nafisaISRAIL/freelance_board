@@ -18,6 +18,16 @@ class Order(models.Model):
         max_length=50, choices=STATUS, default=STATUS[0][0])
     price = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    freelancer = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='order_freelancer', on_delete=models.CASCADE, null=True)
+    approved = models.BooleanField(default=False)
+
+    def activate(self, freelancer):
+        self.freelancer = freelancer
+        self.status = 'active'
+        self.client.balance -= self.price
+        self.client.freeze_balance += self.price
+        self.client.save(update_fields=['balance', 'freeze_balance'])
+        self.save(update_fields=['status', 'freelancer'])
 
 
 class FreelancerRequest(models.Model):

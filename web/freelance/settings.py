@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'freelance.account',
     'freelance.order',
+    'freelance.payment'
 ]
 
 MIDDLEWARE = [
