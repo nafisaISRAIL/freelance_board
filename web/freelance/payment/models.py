@@ -1,6 +1,8 @@
 from django.db import models
+from django.db.models import F
 from datetime import datetime
 import time
+from freelance.account.models import User
 
 STATUS = (
     ('success', 'Success'),
@@ -23,36 +25,35 @@ class TransactionLog(models.Model):
     transaction_code = models.CharField(max_length=50, unique=True)
 
     @classmethod
-    def transfer(cls, client, freelancer, amount, status):
+    def transfer(cls, client_email, freelancer_email, amount, status):
         transaction_code = int(time.mktime(datetime.now().timetuple()))
         log = cls.objects.create(
             amount=amount,
-            client_email=client.email,
-            freelancer_email=freelancer.email,
+            client_email=client_email,
+            freelancer_email=freelancer_email,
             status=status,
             transaction_type='transfer',
             transaction_code=transaction_code
         )
-
-        if log.status == 'success':
-            client.freeze_balance -= amount
-            freelancer.balance += amount
-            client.save(update_fields=['freeze_balance'])
-            freelancer.save(update_fields=['balance'])
+        client = User.objects.select_for_update().filter(email=client_email)
+        freelancer = User.objects.select_for_update().filter(email=freelancer_email)
+        if log.status == 'success' and client and freelancer:
+            client.update(freeze_balance=F('freeze_balance') - amount)
+            freelancer.update(balance=F('balance') + amount)
         return log
 
     @classmethod
-    def deposit(cls, client, amount, status):
+    def deposit(cls, client_email, amount, status):
         transaction_code = int(time.mktime(datetime.now().timetuple()))
         log = cls.objects.create(
             amount=amount,
-            client_email=client.email,
+            client_email=client_email,
             status=status,
             transaction_type='deposit',
             transaction_code=transaction_code
         )
 
-        if log.status == 'success':
-            client.balance += amount
-            client.save(update_fields=['balance'])
+        client = User.objects.select_for_update().filter(email=email).first()
+        if log.status == 'success' and client:
+            client.update(balance=F('balance') + amount)
         return log

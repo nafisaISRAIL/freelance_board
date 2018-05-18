@@ -14,7 +14,7 @@ class OrderTestCase(APIViewTestCase):
         self.user_client.set_password('qwerty')
         self.user_client.balance = 100
         self.user_client.save()
-        response = self.client.post('/api/v1/login', {'email': 'client@example.com', 'password':'qwerty'})
+        response = self.client.post('/api/v1/login', {'email': 'client@example.com', 'password': 'qwerty'})
         self.client_token = response.data['token']
 
     def test_create_not_status_201(self):
@@ -110,12 +110,18 @@ class ClientApproveTestCase(APIViewTestCase):
         self.client2_token = response.data['token']
 
     def test_200(self):
+        old_balance = self.client_user.balance
+        old_freeze_balance = self.client_user.freeze_balance
         self.client.credentials(HTTP_AUTHORIZATION='Token {}'.format(self.client_token))
         data = {
             'freelancer': self.freelancer.id
         }
         response = self.client.post('/api/v1/users/{}/orders/{}/approve_freelancer_request'.format(self.client_user.id, self.order.id), data)
         self.assertEqual(response.status_code, 200)
+        client = User.objects.get(id=self.client_user.id)
+        self.assertEqual(client.balance, old_balance - self.order.price)
+        self.assertEqual(client.freeze_balance, old_freeze_balance + self.order.price)
+
 
     def test_403(self):
         self.client.credentials(HTTP_AUTHORIZATION='Token {}'.format(self.client2_token))
@@ -185,6 +191,12 @@ class UpdateOrderTestCase(APIViewTestCase):
         self.assertEqual(log.client_email, self.order.client.email)
         self.assertEqual(log.freelancer_email, self.order.freelancer.email)
         self.assertEqual(log.transaction_type, 'transfer')
+
+        client = User.objects.get(id=self.client_user.id)
+        freelancer = User.objects.get(id=self.freelancer.id)
+
+        self.assertEqual(client.freeze_balance, self.client_user.freeze_balance - self.order.price)
+        self.assertEqual(freelancer.balance, self.freelancer.balance + self.order.price)
 
     def test_403(self):
         data = {

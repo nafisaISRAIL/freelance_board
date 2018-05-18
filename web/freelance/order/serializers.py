@@ -30,8 +30,8 @@ class OrderSerializer(serializers.ModelSerializer):
         if status == 'finished' and instance.freelancer and instance.status != 'finished':
             TransactionLog.transfer(
                 amount=instance.price,
-                freelancer=instance.freelancer,
-                client=instance.client,
+                freelancer_email=instance.freelancer.email,
+                client_email=instance.client.email,
                 status='success'
             )
             instance.approved = True
