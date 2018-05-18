@@ -38,16 +38,3 @@ class UserSerializer(serializers.ModelSerializer):
         if len(password) < 4:
             raise serializers.ValidationError('Short password')
         return password
-
-
-
-# class UserSerializer(serializers.ModelSerializer):
-#     full_name = serializers.SerialiserMethodField(source='get_full_name')
-
-#     class Meta:
-#         model = User
-#         fields = (
-#             'id',
-#             'email',
-#             'full_name',
-#             'role')

@@ -186,6 +186,7 @@ class UpdateOrderTestCase(APIViewTestCase):
         response = self.client.patch('/api/v1/orders/{}'.format(self.order.id), data)
         transaction_code = int(time.mktime(datetime.now().timetuple()))
         self.assertEqual(response.status_code, 200)
+
         log = TransactionLog.objects.get(transaction_code=transaction_code)
         self.assertEqual(log.amount, self.order.price)
         self.assertEqual(log.client_email, self.order.client.email)
@@ -204,5 +205,21 @@ class UpdateOrderTestCase(APIViewTestCase):
         }
         self.client.credentials(HTTP_AUTHORIZATION='Token {}'.format(self.client2_token))
         response = self.client.patch('/api/v1/orders/{}'.format(self.order.id), data)
-        transaction_code = int(time.mktime(datetime.now().timetuple()))
         self.assertEqual(response.status_code, 403)
+
+    def test_200_failed_transaction(self):
+        self.client_user.freeze_balance = 0
+        self.client_user.save()
+        data = {
+            'status': 'finished'
+        }
+        self.client.credentials(HTTP_AUTHORIZATION='Token {}'.format(self.client_token))
+        response = self.client.patch('/api/v1/orders/{}'.format(self.order.id), data)
+        transaction_code = int(time.mktime(datetime.now().timetuple()))
+        self.assertEqual(response.status_code, 200)
+
+        log = TransactionLog.objects.get(transaction_code=transaction_code)
+        self.assertEqual(log.status, 'failed')
+
+        freelancer = User.objects.get(id=self.freelancer.id)
+        self.assertEqual(freelancer.balance, self.freelancer.balance)

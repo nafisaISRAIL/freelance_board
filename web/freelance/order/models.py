@@ -26,10 +26,9 @@ class Order(models.Model):
     def activate(self, freelancer):
         self.freelancer = freelancer
         self.status = 'active'
-        User.objects.select_for_update().filter(id=self.client.id).update(balance=F('balance') - self.price, freeze_balance=F('freeze_balance') + self.price)
-        # self.client.balance -= self.price
-        # self.client.freeze_balance += self.price
-        # self.client.save(update_fields=['balance', 'freeze_balance'])
+        User.objects.select_for_update().filter(
+            id=self.client.id).update(
+            balance=F('balance') - self.price, freeze_balance=F('freeze_balance') + self.price)
         self.save(update_fields=['status', 'freelancer'])
 
 

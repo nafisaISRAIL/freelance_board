@@ -3,6 +3,7 @@ from django.db.models import F
 from datetime import datetime
 import time
 from freelance.account.models import User
+from django.db import DatabaseError, transaction
 
 STATUS = (
     ('success', 'Success'),
@@ -35,12 +36,18 @@ class TransactionLog(models.Model):
             transaction_type='transfer',
             transaction_code=transaction_code
         )
-        client = User.objects.select_for_update().filter(email=client_email)
-        freelancer = User.objects.select_for_update().filter(email=freelancer_email)
-        if log.status == 'success' and client and freelancer:
-            client.update(freeze_balance=F('freeze_balance') - amount)
-            freelancer.update(balance=F('balance') + amount)
-        return log
+        try:
+            with transaction.atomic():
+                client = User.objects.select_for_update().filter(email=client_email)
+                freelancer = User.objects.select_for_update().filter(email=freelancer_email)
+                if log.status == 'success' and client and freelancer:
+                    client.update(freeze_balance=F('freeze_balance') - amount)
+                    freelancer.update(balance=F('balance') + amount)
+                return log
+        except DatabaseError:
+            log.status = 'failed'
+            log.save(update_fields=['status'])
+
 
     @classmethod
     def deposit(cls, client_email, amount, status):
@@ -53,7 +60,7 @@ class TransactionLog(models.Model):
             transaction_code=transaction_code
         )
 
-        client = User.objects.select_for_update().filter(email=email).first()
+        client = User.objects.select_for_update().filter(email=client_email)
         if log.status == 'success' and client:
             client.update(balance=F('balance') + amount)
         return log
